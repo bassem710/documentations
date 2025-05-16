@@ -29,3 +29,30 @@
     ]
 }
 ```
+
+S3 Permission Policy (Allow public GET access)
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::<bucket-name>/*"
+        },
+        {
+            "Effect": "Deny",
+            "Principal": "*",
+            "Action": "s3:*",
+            "Resource": "arn:aws:s3:::<bucket-name>/*",
+            "Condition": {
+                "Bool": {
+                    "aws:SecureTransport": "false"
+                }
+            }
+        }
+    ]
+}
+```
