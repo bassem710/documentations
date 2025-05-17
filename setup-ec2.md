@@ -110,23 +110,26 @@ sudo systemctl status nginx
 ```
 sudo nano /etc/nginx/sites-available/reverse_proxy.conf
 ```
-
+Nginx config Port 8000, Files up to 5MB & Socket support:
 ```
+# HTTP → HTTPS redirect
 # HTTP → HTTPS redirect
 server {
     listen 80;
-    server_name sub.domain.com sub.domain.com;
+    server_name sub.domain.com;
     return 301 https://$host$request_uri;
 }
 
-# HTTPS for sub.domain.com (port 8000)
+# HTTPS for api.dayra.com (port 8000)
 server {
     listen 443 ssl;
     server_name sub.domain.com;
 
-    # Use the SAME certificate as sub.domain.com
     ssl_certificate /etc/letsencrypt/live/sub.domain.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/sub.domain.com/privkey.pem;
+
+    # Increase client max body size to 5MB
+    client_max_body_size 5M;
 
     location / {
         proxy_pass http://localhost:8000;
@@ -134,23 +137,12 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-# HTTPS for sub.domain.com (port 9000)
-server {
-    listen 443 ssl;
-    server_name sub.domain.com;
-
-    ssl_certificate /etc/letsencrypt/live/sub.domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/sub.domain.com/privkey.pem;
-
-    location / {
-        proxy_pass http://localhost:9000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 86400;  # Longer timeout for WebSockets
     }
 }
 ```
